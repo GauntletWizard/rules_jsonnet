@@ -38,12 +38,18 @@ load("@io_bazel_rules_jsonnet//jsonnet:jsonnet.bzl", "jsonnet_repositories")
 jsonnet_repositories()
 ```
 """
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-_JSONNET_FILETYPE = [
-    ".jsonnet",
-    ".libsonnet",
-    ".json",
-]
+_JSONNET_FILETYPE = FileType([".jsonnet", ".libsonnet", ".json"])
+
+def _add_prefix_to_imports(label, imports):
+  imports_prefix = ""
+  if label.workspace_root:
+    imports_prefix += label.workspace_root + "/"
+  if label.package:
+    imports_prefix += label.package + "/"
+
+  return ["%s%s" % (imports_prefix, im) for im in imports]
 
 def _setup_deps(deps):
   """Collects source files and import flags of transitive dependencies.
@@ -678,7 +684,7 @@ Example:
 
 def jsonnet_repositories():
   """Adds the external dependencies needed for the Jsonnet rules."""
-  native.http_archive(
+  http_archive(
       name = "jsonnet",
       urls = [
           "https://mirror.bazel.build/github.com/google/jsonnet/archive/v0.10.0.tar.gz",
